@@ -1,10 +1,13 @@
 #include <iostream>
+#include <thread>
+#include <mutex>
 #define BOUND 1000
 typedef struct ring
 {
     int value[BOUND];
     int index;
     int maxindex;
+    std::mutex mtx;
 } ring;
 ring ringbuffer;
 void ringbuffer_init(int size)
@@ -24,6 +27,7 @@ int ringbuffer_is_full()
 {
     if (ringbuffer.maxindex == ringbuffer.index)
     {
+        ringbuffer.mtx.unlock();
         return 1;
     }
     return 0;
@@ -42,17 +46,21 @@ int ringbuffer_size()
 }
 int ringbuffer_add(int value)
 {
+    ringbuffer.mtx.lock();
     int index = ringbuffer.index;
     if (ringbuffer_is_full()  == 0)
     {
         ringbuffer.value[index] = value;
         ringbuffer.index++;
+        ringbuffer.mtx.unlock();
         return 0;
     }
+    ringbuffer.mtx.unlock();
     return -1;
 }
 int ringbuffer_remove(int value)
 {
+    ringbuffer.mtx.lock();
     int pos = 0;
     while (pos < ringbuffer_size())
     {
@@ -64,6 +72,7 @@ int ringbuffer_remove(int value)
     }
     if (pos == ringbuffer_size())
     {
+        ringbuffer.mtx.unlock();
         return -1;
     }
     else
@@ -77,6 +86,7 @@ int ringbuffer_remove(int value)
         {
            ringbuffer.index--;
         }
+        ringbuffer.mtx.unlock();
         return 0;
     }
 }
