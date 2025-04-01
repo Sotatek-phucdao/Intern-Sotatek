@@ -27,7 +27,6 @@ int ringbuffer_is_full()
 {
     if (ringbuffer.maxindex == ringbuffer.index)
     {
-        ringbuffer.mtx.unlock();
         return 1;
     }
     return 0;
