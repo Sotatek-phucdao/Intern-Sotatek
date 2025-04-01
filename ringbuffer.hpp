@@ -73,7 +73,10 @@ int ringbuffer_remove(int value)
             int tmp = ringbuffer.value[i + 1];
             ringbuffer.value[i] = tmp;
         }
-        ringbuffer.index--;
+        if (ringbuffer.index > 0)
+        {
+           ringbuffer.index--;
+        }
         return 0;
     }
 }
