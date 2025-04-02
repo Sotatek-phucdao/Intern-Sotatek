@@ -46,7 +46,7 @@ int ringbuffer_add(int value){
         rb.mtx.unlock();
         return -1;
     }
-    rb.value[rb.tail%rb.size] = value;
+    rb.value[rb.tail] = value;
     rb.tail = (rb.tail+1) % rb.size;
     rb.count++;
     rb.mtx.unlock();
