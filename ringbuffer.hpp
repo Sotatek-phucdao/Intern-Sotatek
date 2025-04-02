@@ -1,91 +1,67 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
-#define BOUND 1000
-typedef struct ring
-{
-    int value[BOUND];
-    int index;
-    int maxindex;
+#define bound 256
+typedef struct ring{
+    int head;
+    int tail;
+    int count;
+    int size;
+    int value[bound];
     std::mutex mtx;
-} ring;
-ring ringbuffer;
-void ringbuffer_init(int size)
-{
-    ringbuffer.index = 0;
-    if (size > BOUND)
+}ring ;
+ring rb;
+void ringbuffer_init(int size){
+    rb.size = size;
+    rb.head = 0;
+    rb.tail = 0;
+    rb.count = 0;
+    for (int i = 0; i < bound; i++)
     {
-        ringbuffer.maxindex = BOUND;
+        rb.value[i] = 0;
     }
-    else
+}
+int ringbuffer_is_full(){
+    if (rb.count == rb.size)
     {
-        ringbuffer.maxindex = size;
+        return 1;
     }
+    return 0;
+} 
+int ringbuffer_is_empty(){
+    if (rb.count == 0)
+    {
+        return 1;
+    }
+    return 0;
+}
+int ringbuffer_size(){
+    return rb.count;
 }
 
-int ringbuffer_is_full()
-{
-    if (ringbuffer.maxindex == ringbuffer.index)
+int ringbuffer_add(int value){
+    rb.mtx.lock();
+    if (ringbuffer_is_full() == 1)
     {
-        return 1;
-    }
-    return 0;
-}
-int ringbuffer_is_empty()
-{
-    if (ringbuffer.index == 0)
-    {
-        return 1;
-    }
-    return 0;
-}
-int ringbuffer_size()
-{
-    return ringbuffer.index;
-}
-int ringbuffer_add(int value)
-{
-    ringbuffer.mtx.lock();
-    int index = ringbuffer.index;
-    if (ringbuffer_is_full()  == 0)
-    {
-        ringbuffer.value[index] = value;
-        ringbuffer.index++;
-        ringbuffer.mtx.unlock();
-        return 0;
-    }
-    ringbuffer.mtx.unlock();
-    return -1;
-}
-int ringbuffer_remove(int value)
-{
-    ringbuffer.mtx.lock();
-    int pos = 0;
-    while (pos < ringbuffer_size())
-    {
-        if (ringbuffer.value[pos] == value)
-        {
-            break;
-        }
-        pos++;
-    }
-    if (pos == ringbuffer_size())
-    {
-        ringbuffer.mtx.unlock();
+        rb.mtx.unlock();
         return -1;
     }
-    else
+    rb.value[rb.tail%rb.size] = value;
+    rb.tail = (rb.tail+1) % rb.size;
+    rb.count++;
+    rb.mtx.unlock();
+    return 0;
+}
+int ringbuffer_remove(int* value){
+    rb.mtx.lock();
+    if (ringbuffer_is_empty())
     {
-        for (int i = pos; i < ringbuffer_size(); i++)
-        {
-            int tmp = ringbuffer.value[i + 1];
-            ringbuffer.value[i] = tmp;
-        }
-        if (ringbuffer.index > 0)
-        {
-           ringbuffer.index--;
-        }
-        ringbuffer.mtx.unlock();
-        return 0;
+        rb.mtx.unlock();
+        return -1;
     }
+    *value = rb.value[rb.head];
+    rb.head = (rb.head+1)%rb.size;
+    rb.count--;
+    rb.mtx.unlock();
+    return 0;
 }

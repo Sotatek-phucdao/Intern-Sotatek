@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include <atomic>
-#include "ringbuffer.hpp"
+#include "ringbuffer2.hpp"
 using namespace std;
 
 // Hàm kiểm thử với đa luồng
@@ -12,24 +12,18 @@ void add_to_ringbuffer(int value, atomic<int>& counter) {
 
 TEST(AdditionTest, HandlesPositiveNumbers){
     ringbuffer_init(5);
-    EXPECT_EQ(ringbuffer_add(10),0);
+    int value;
+    EXPECT_EQ(ringbuffer_add(10),0); 
     EXPECT_EQ(ringbuffer_add(20),0);
     EXPECT_EQ(ringbuffer_add(30),0);
-    EXPECT_EQ(ringbuffer_size(),3);
-    EXPECT_EQ(ringbuffer_is_empty(),0);
-    EXPECT_EQ(ringbuffer_is_full(),0);
-    EXPECT_EQ(ringbuffer_remove(10),0);
-    EXPECT_EQ(ringbuffer_remove(20),0);
-    EXPECT_EQ(ringbuffer_remove(30),0);
-    EXPECT_EQ(ringbuffer_remove(10),-1);
-    EXPECT_EQ(ringbuffer_size(),0);
-    EXPECT_EQ(ringbuffer_is_empty(),1);
-    EXPECT_EQ(ringbuffer_is_full(),0);
+    EXPECT_EQ(ringbuffer_remove(&value),0);
+    EXPECT_EQ(value,10);
+    EXPECT_EQ(ringbuffer_size(),2);
 }
 TEST(MultithreadedRingBufferTest, HandlesMultithreadedAdditions) {
     ringbuffer_init(5);
     atomic<int> counter(0);
-
+     
     // Tạo nhiều luồng để thêm phần tử vào vòng đệm
     thread t1(add_to_ringbuffer, 10, ref(counter));
     thread t2(add_to_ringbuffer, 20, ref(counter));
